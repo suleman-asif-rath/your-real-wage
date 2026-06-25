@@ -12,6 +12,7 @@ import {
 
 interface RevealProps {
   result: WageResult;
+  currency: string;
   onShare: () => void;
   onReset: () => void;
 }
@@ -20,13 +21,21 @@ const COUNT_MS = 1400;
 const HOLD_MS = 1000;
 const DROP_MS = 1100;
 
-// A relatable big-ticket item for the "hours of your life" perspective line.
-const GADGET_PRICE = 1200;
-const GADGET_LABEL = "$1,200 phone";
-
 type Stage = "counting" | "dropping" | "done";
 
-export default function Reveal({ result, onShare, onReset }: RevealProps) {
+/** Round to 2 significant figures so the example price looks deliberate. */
+function roundNice(value: number): number {
+  if (value <= 0) return 0;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(value)) - 1);
+  return Math.round(value / magnitude) * magnitude;
+}
+
+export default function Reveal({
+  result,
+  currency,
+  onShare,
+  onReset,
+}: RevealProps) {
   const [stage, setStage] = useState<Stage>("counting");
   const [target, setTarget] = useState(0);
 
@@ -56,6 +65,15 @@ export default function Reveal({ result, onShare, onReset }: RevealProps) {
 
   const negative = result.realHourly <= 0;
 
+  // A relatable big-ticket purchase, sized to roughly a month of nominal pay so
+  // it feels real in any currency without needing exchange rates.
+  const refPrice = roundNice(
+    (result.nominalHourly * result.officialHoursPerYear) / 12,
+  );
+  const refRealHours = result.realHourly > 0 ? refPrice / result.realHourly : 0;
+  const refNominalHours =
+    result.nominalHourly > 0 ? refPrice / result.nominalHourly : 0;
+
   return (
     <div className="text-center">
       {/* The hero number. */}
@@ -70,7 +88,7 @@ export default function Reveal({ result, onShare, onReset }: RevealProps) {
           transition: "color 0.8s ease",
         }}
       >
-        {formatHourly(display)}
+        {formatHourly(display, currency)}
         <span className="text-3xl font-semibold text-muted sm:text-4xl">
           /hr
         </span>
@@ -84,7 +102,7 @@ export default function Reveal({ result, onShare, onReset }: RevealProps) {
       >
         You thought it was{" "}
         <span className="font-semibold text-nominal line-through decoration-muted/60">
-          {formatHourly(result.nominalHourly)}/hr
+          {formatHourly(result.nominalHourly, currency)}/hr
         </span>
       </p>
 
@@ -111,7 +129,7 @@ export default function Reveal({ result, onShare, onReset }: RevealProps) {
               </span>{" "}
               than you thought. Every year, your job quietly takes back{" "}
               <span className="font-semibold text-foreground">
-                {formatMoney(result.annualJobCosts)}
+                {formatMoney(result.annualJobCosts, currency)}
               </span>{" "}
               and{" "}
               <span className="font-semibold text-foreground">
@@ -139,19 +157,22 @@ export default function Reveal({ result, onShare, onReset }: RevealProps) {
           <BreakdownRow
             label="What the job costs you / year"
             sub="Commute, food, clothes, childcare, decompression"
-            value={formatMoney(result.annualJobCosts)}
+            value={formatMoney(result.annualJobCosts, currency)}
           />
         </dl>
 
-        {/* One non-preachy line of perspective. */}
-        {!negative && (
+        {/* One non-preachy line of perspective, in the user's own currency. */}
+        {!negative && refPrice > 0 && (
           <p className="mx-auto mt-8 max-w-md text-balance text-sm text-muted">
-            At your real wage, a {GADGET_LABEL} costs you{" "}
+            At your real wage, a{" "}
             <span className="font-semibold text-foreground">
-              {formatHours(GADGET_PRICE / result.realHourly)} hours
+              {formatMoney(refPrice, currency)}
             </span>{" "}
-            of actual life — not{" "}
-            {formatHours(GADGET_PRICE / result.nominalHourly)}.
+            purchase costs you{" "}
+            <span className="font-semibold text-foreground">
+              {formatHours(refRealHours)} hours
+            </span>{" "}
+            of actual life — not {formatHours(refNominalHours)}.
           </p>
         )}
 

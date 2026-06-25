@@ -8,10 +8,15 @@ import { SITE_URL } from "@/lib/site";
 
 interface ShareModalProps {
   result: WageResult;
+  currency: string;
   onClose: () => void;
 }
 
-export default function ShareModal({ result, onClose }: ShareModalProps) {
+export default function ShareModal({
+  result,
+  currency,
+  onClose,
+}: ShareModalProps) {
   const [includeNominal, setIncludeNominal] = useState(true);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
@@ -23,9 +28,10 @@ export default function ShareModal({ result, onClose }: ShareModalProps) {
         nominalHourly: result.nominalHourly,
         realHourly: result.realHourly,
         percentDrop: result.percentDrop,
+        currency,
         includeNominal,
       }).toDataURL("image/png"),
-    [result, includeNominal],
+    [result, currency, includeNominal],
   );
 
   // Close on Escape.
@@ -45,6 +51,7 @@ export default function ShareModal({ result, onClose }: ShareModalProps) {
         nominalHourly: result.nominalHourly,
         realHourly: result.realHourly,
         percentDrop: result.percentDrop,
+        currency,
         includeNominal,
       });
       const outcome = await shareOrDownload(canvas, `https://${SITE_URL}`);

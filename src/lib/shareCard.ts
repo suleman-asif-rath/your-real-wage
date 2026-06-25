@@ -8,6 +8,8 @@ export interface ShareCardData {
   nominalHourly: number;
   realHourly: number;
   percentDrop: number;
+  /** ISO currency code, e.g. "USD", "PKR". */
+  currency: string;
   /** When false, the "before" wage is hidden for privacy. */
   includeNominal: boolean;
 }
@@ -60,8 +62,8 @@ export function renderShareCard(data: ShareCardData): HTMLCanvasElement {
 
     // Struck-through nominal wage.
     ctx.fillStyle = COLORS.nominal;
-    ctx.font = `700 96px ${FONT}`;
-    const nominalText = `${formatHourly(data.nominalHourly)}/hr`;
+    const nominalText = `${formatHourly(data.nominalHourly, data.currency)}/hr`;
+    fitFont(ctx, nominalText, 700, 96, 880);
     ctx.fillText(nominalText, SIZE / 2, 400);
     strikeThrough(ctx, SIZE / 2, 368, nominalText, COLORS.muted);
 
@@ -76,12 +78,12 @@ export function renderShareCard(data: ShareCardData): HTMLCanvasElement {
     ctx.fillText("You actually earn", SIZE / 2, 580);
 
     // The real wage — the hero.
-    drawHeroWage(ctx, data.realHourly, 720);
+    drawHeroWage(ctx, data.realHourly, data.currency, 720);
   } else {
     ctx.fillStyle = COLORS.muted;
     ctx.font = `500 36px ${FONT}`;
     ctx.fillText("My real hourly wage", SIZE / 2, 470);
-    drawHeroWage(ctx, data.realHourly, 640);
+    drawHeroWage(ctx, data.realHourly, data.currency, 640);
   }
 
   // --- Percent-drop pill ---
@@ -107,20 +109,48 @@ export function renderShareCard(data: ShareCardData): HTMLCanvasElement {
 function drawHeroWage(
   ctx: CanvasRenderingContext2D,
   value: number,
+  currency: string,
   y: number,
 ) {
+  const text = formatHourly(value, currency);
+
+  // Reserve room for the "/hr" suffix, then shrink the number to fit the rest.
+  const suffixSize = 56;
+  ctx.font = `700 ${suffixSize}px ${FONT}`;
+  const suffixWidth = ctx.measureText("/hr").width + 12;
+  const numSize = fitFont(ctx, text, 800, 168, 980 - suffixWidth);
+  const numWidth = ctx.measureText(text).width;
+
   ctx.fillStyle = COLORS.real;
-  ctx.font = `800 168px ${FONT}`;
-  const text = formatHourly(value);
+  ctx.font = `800 ${numSize}px ${FONT}`;
   ctx.fillText(text, SIZE / 2, y);
 
   // "/hr" suffix, smaller and muted, placed just after the number.
-  const numWidth = ctx.measureText(text).width;
   ctx.fillStyle = COLORS.muted;
-  ctx.font = `700 56px ${FONT}`;
+  ctx.font = `700 ${suffixSize}px ${FONT}`;
   ctx.textAlign = "left";
   ctx.fillText("/hr", SIZE / 2 + numWidth / 2 + 12, y);
   ctx.textAlign = "center";
+}
+
+/**
+ * Shrink the font for `text` until it fits `maxWidth`, then set it on the
+ * context and return the chosen size. Sets ctx.font as a side effect.
+ */
+function fitFont(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  weight: number,
+  basePx: number,
+  maxWidth: number,
+): number {
+  let size = basePx;
+  ctx.font = `${weight} ${size}px ${FONT}`;
+  while (ctx.measureText(text).width > maxWidth && size > 24) {
+    size -= 4;
+    ctx.font = `${weight} ${size}px ${FONT}`;
+  }
+  return size;
 }
 
 function drawPill(ctx: CanvasRenderingContext2D, text: string, y: number) {

@@ -1,17 +1,26 @@
 "use client";
 
 import { WageInputs } from "@/lib/wage";
+import { currencySymbol } from "@/lib/format";
 import NumberField from "./NumberField";
 
 interface WageFormProps {
   inputs: WageInputs;
+  currency: string;
   onChange: (inputs: WageInputs) => void;
   onSubmit: () => void;
 }
 
-export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) {
+export default function WageForm({
+  inputs,
+  currency,
+  onChange,
+  onSubmit,
+}: WageFormProps) {
   const set = <K extends keyof WageInputs>(key: K, value: WageInputs[K]) =>
     onChange({ ...inputs, [key]: value });
+
+  const symbol = currencySymbol(currency);
 
   return (
     <form
@@ -48,7 +57,7 @@ export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) 
           <NumberField
             key="annual"
             label="Annual salary"
-            prefix="$"
+            prefix={symbol}
             step={1000}
             value={inputs.annualSalary}
             onChange={(v) => set("annualSalary", v)}
@@ -57,7 +66,7 @@ export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) 
           <NumberField
             key="hourly"
             label="Hourly rate"
-            prefix="$"
+            prefix={symbol}
             step={0.5}
             hint="We'll turn this into a yearly figure using your official hours below."
             value={inputs.hourlyRate}
@@ -115,21 +124,21 @@ export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) 
           <NumberField
             label="Commute"
             hint="Gas, transit, parking."
-            prefix="$"
+            prefix={symbol}
             value={inputs.commuteCost}
             onChange={(v) => set("commuteCost", v)}
             suffix="/mo"
           />
           <NumberField
             label="Work lunches & coffee"
-            prefix="$"
+            prefix={symbol}
             value={inputs.lunches}
             onChange={(v) => set("lunches", v)}
             suffix="/mo"
           />
           <NumberField
             label="Work clothes & dry cleaning"
-            prefix="$"
+            prefix={symbol}
             value={inputs.clothes}
             onChange={(v) => set("clothes", v)}
             suffix="/mo"
@@ -137,7 +146,7 @@ export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) 
           <NumberField
             label="Childcare"
             hint="Only what you need because you work."
-            prefix="$"
+            prefix={symbol}
             value={inputs.childcare}
             onChange={(v) => set("childcare", v)}
             suffix="/mo"
@@ -145,7 +154,7 @@ export default function WageForm({ inputs, onChange, onSubmit }: WageFormProps) 
           <NumberField
             label="Decompression spending"
             hint="Takeout, drinks, retail therapy you only do because the job drains you."
-            prefix="$"
+            prefix={symbol}
             value={inputs.decompSpending}
             onChange={(v) => set("decompSpending", v)}
             suffix="/mo"

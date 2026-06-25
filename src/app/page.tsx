@@ -2,15 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { computeWage, DEFAULT_INPUTS, WageInputs } from "@/lib/wage";
+import { DEFAULT_CURRENCY } from "@/lib/currencies";
 import { SITE_URL } from "@/lib/site";
 import WageForm from "@/components/WageForm";
 import Reveal from "@/components/Reveal";
 import ShareModal from "@/components/ShareModal";
+import CurrencySelect from "@/components/CurrencySelect";
 
 type View = "form" | "reveal";
 
 export default function Home() {
   const [inputs, setInputs] = useState<WageInputs>(DEFAULT_INPUTS);
+  const [currency, setCurrency] = useState<string>(DEFAULT_CURRENCY);
   const [view, setView] = useState<View>("form");
   const [sharing, setSharing] = useState(false);
 
@@ -32,8 +35,12 @@ export default function Home() {
       <div className="flex-1">
         {view === "form" ? (
           <div className="animate-fade-up">
+            <div className="mb-5 flex justify-end">
+              <CurrencySelect value={currency} onChange={setCurrency} />
+            </div>
             <WageForm
               inputs={inputs}
+              currency={currency}
               onChange={setInputs}
               onSubmit={() => setView("reveal")}
             />
@@ -42,8 +49,9 @@ export default function Home() {
           <div className="animate-fade-up">
             <Reveal
               // Remount on each calculation so the animation replays.
-              key={JSON.stringify(inputs)}
+              key={JSON.stringify(inputs) + currency}
               result={result}
+              currency={currency}
               onShare={() => setSharing(true)}
               onReset={() => setView("form")}
             />
@@ -56,7 +64,11 @@ export default function Home() {
       </footer>
 
       {sharing && (
-        <ShareModal result={result} onClose={() => setSharing(false)} />
+        <ShareModal
+          result={result}
+          currency={currency}
+          onClose={() => setSharing(false)}
+        />
       )}
     </main>
   );
